@@ -71,6 +71,7 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 }
 
 func (ep *ErrorPage) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	ep.log(fmt.Sprintf("config %#v", ep))
 	ep.log("request incoming")
 	catcher := helpers.NewCodeCatcher(rw, ep.httpStatusRanges, ep.emptyOnly)
 	ep.next.ServeHTTP(catcher, req)
@@ -122,6 +123,7 @@ func newRequest(baseURL string) (*http.Request, error) {
 }
 
 func (ep *ErrorPage) handleInService(rw http.ResponseWriter, req *http.Request) {
+	rw.Header().Add("X-ErrorPage", "served")
 	ep.log("making request to service")
 	res, err := http.DefaultClient.Do(req)
 	ep.log("request made to service")

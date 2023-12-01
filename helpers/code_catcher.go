@@ -16,6 +16,7 @@ type CodeCatcher struct {
 	code               int
 	httpCodeRanges     HTTPCodeRanges
 	caughtFilteredCode bool
+	caughtFilteredBody bool
 	responseWriter     http.ResponseWriter
 	headersSent        bool
 	emptyOnly          bool
@@ -54,18 +55,7 @@ func (cc *CodeCatcher) IsFilteredCode() bool {
 }
 
 func (cc *CodeCatcher) HasBody() bool {
-	if !cc.emptyOnly {
-		return false
-	}
-
-	headers := cc.Header()
-	content_length := headers.Get("content-length")
-	if content_length == "" {
-		transfer_encoding := headers.Get("transfer-encoding")
-		return transfer_encoding != ""
-	}
-
-	return true
+	return cc.emptyOnly && cc.caughtFilteredBody
 }
 
 func (cc *CodeCatcher) Write(buf []byte) (int, error) {
@@ -73,19 +63,26 @@ func (cc *CodeCatcher) Write(buf []byte) (int, error) {
 	// Otherwise, cc.code is actually a 200 here.
 	cc.WriteHeader(cc.code)
 
-	if cc.caughtFilteredCode && !cc.HasBody() {
+	if cc.caughtFilteredCode && !cc.emptyOnly {
 		// We don't care about the contents of the response,
 		// since we want to serve the ones from the error page,
 		// so we just drop them.
 		return len(buf), nil
 	}
+
+	// write the value because was ignored in the WriteHeader below
+	if !cc.caughtFilteredBody {
+		cc.responseWriter.WriteHeader(cc.code)
+	}
+
+	cc.caughtFilteredBody = true
 	return cc.responseWriter.Write(buf)
 }
 
 // WriteHeader is, in the specific case of 1xx status codes, a direct call to the wrapped ResponseWriter, without marking headers as sent,
 // allowing so further calls.
 func (cc *CodeCatcher) WriteHeader(code int) {
-	if cc.headersSent || cc.caughtFilteredCode {
+	if cc.headersSent || (cc.caughtFilteredCode && !cc.emptyOnly) {
 		return
 	}
 

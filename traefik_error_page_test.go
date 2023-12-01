@@ -9,16 +9,16 @@ import (
 	plugin "github.com/melchor629/traefik-error-page"
 )
 
-func TestDemo(t *testing.T) {
+func TestErrorWithEmptyResponse(t *testing.T) {
 	cfg := plugin.CreateConfig()
-	cfg.Headers["X-Host"] = "[[.Host]]"
-	cfg.Headers["X-Method"] = "[[.Method]]"
-	cfg.Headers["X-URL"] = "[[.URL]]"
-	cfg.Headers["X-URL"] = "[[.URL]]"
-	cfg.Headers["X-Demo"] = "test"
+	cfg.Status = []string{"400-499", "500-599"}
+	cfg.Service = "https://http.cat"
+	cfg.Query = "/{status}"
 
 	ctx := context.Background()
-	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {})
+	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.WriteHeader(404)
+	})
 
 	handler, err := plugin.New(ctx, next, cfg, "demo-plugin")
 	if err != nil {
@@ -34,16 +34,86 @@ func TestDemo(t *testing.T) {
 
 	handler.ServeHTTP(recorder, req)
 
-	assertHeader(t, req, "X-Host", "localhost")
-	assertHeader(t, req, "X-URL", "http://localhost")
-	assertHeader(t, req, "X-Method", "GET")
-	assertHeader(t, req, "X-Demo", "test")
+	if recorder.Code != 404 {
+		t.Errorf("status code is not 404: %d", recorder.Code)
+	}
+
+	assertHasServed(t, recorder, true)
 }
 
-func assertHeader(t *testing.T, req *http.Request, key, expected string) {
+func TestErrorWithResponse(t *testing.T) {
+	cfg := plugin.CreateConfig()
+	cfg.Status = []string{"400-499", "500-599"}
+	cfg.Service = "https://http.cat"
+	cfg.Query = "/{status}"
+
+	ctx := context.Background()
+	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		http.NotFound(rw, req)
+	})
+
+	handler, err := plugin.New(ctx, next, cfg, "demo-plugin")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	recorder := httptest.NewRecorder()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	handler.ServeHTTP(recorder, req)
+
+	if recorder.Code != 404 {
+		t.Errorf("status code is not 404: %d", recorder.Code)
+	}
+
+	assertHasServed(t, recorder, false)
+}
+
+func TestErrorWithResponseButForceHandle(t *testing.T) {
+	cfg := plugin.CreateConfig()
+	cfg.Status = []string{"400-499", "500-599"}
+	cfg.Service = "https://http.cat"
+	cfg.Query = "/{status}"
+	cfg.EmptyOnly = false
+
+	ctx := context.Background()
+	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		http.NotFound(rw, req)
+	})
+
+	handler, err := plugin.New(ctx, next, cfg, "demo-plugin")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	recorder := httptest.NewRecorder()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	handler.ServeHTTP(recorder, req)
+
+	if recorder.Code != 404 {
+		t.Errorf("status code is not 404: %d", recorder.Code)
+	}
+
+	assertHasServed(t, recorder, true)
+}
+
+func assertHasServed(t *testing.T, recorder *httptest.ResponseRecorder, served bool) {
 	t.Helper()
 
-	if req.Header.Get(key) != expected {
-		t.Errorf("invalid header value: %s", req.Header.Get(key))
+	value := recorder.Header().Get("X-ErrorPage")
+	if served && value != "served" {
+		t.Errorf("the response has not been served from the error service: %s", value)
+	}
+	if !served && value != "" {
+		t.Errorf("the response has been served from the error service and should not")
 	}
 }
