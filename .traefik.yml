@@ -1,0 +1,13 @@
+displayName: Error Pages
+type: middleware
+
+import: github.com/melchor629/traefik-error-page
+
+summary: 'Like the error middleware but with a twist'
+
+testData:
+  status: ['400-499', '500-599']
+  service: 'https://http.cat'
+  query: '/{status}'
+  emptyOnly: true
+  debug: false
