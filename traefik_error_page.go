@@ -1,4 +1,5 @@
-package traefik_error_page
+// Package traefikerrorpage is the plugin package.
+package traefikerrorpage
 
 import (
 	"context"
@@ -33,7 +34,7 @@ func CreateConfig() *Config {
 	}
 }
 
-// The error page plugin.
+// ErrorPage is the error page plugin.
 type ErrorPage struct {
 	next             http.Handler
 	httpStatusRanges helpers.HTTPCodeRanges
@@ -44,8 +45,8 @@ type ErrorPage struct {
 	debug            bool
 }
 
-// Newly created a Error Page plugin.
-func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
+// New creates a new instance of the plugin.
+func New(_ context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
 	if len(config.Status) == 0 {
 		return nil, fmt.Errorf("status cannot be empty")
 	}
@@ -101,10 +102,10 @@ func (ep *ErrorPage) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ep.handleInService(cm, serviceRequest)
 }
 
-func (ep *ErrorPage) parseQuery(code int, request_url string) string {
+func (ep *ErrorPage) parseQuery(code int, requestURL string) string {
 	query := "/" + strings.TrimPrefix(ep.query, "/")
 	query = strings.ReplaceAll(query, "{status}", strconv.Itoa(code))
-	query = strings.ReplaceAll(query, "{url}", url.QueryEscape(request_url))
+	query = strings.ReplaceAll(query, "{url}", url.QueryEscape(requestURL))
 	return query
 }
 
@@ -141,6 +142,7 @@ func (ep *ErrorPage) handleInService(rw http.ResponseWriter, req *http.Request) 
 
 func (ep *ErrorPage) log(message string) {
 	if ep.debug {
+		// #nosec G104
 		os.Stdout.WriteString("plugin=traefik-error-page message=\"" + message + "\"\n")
 	}
 }

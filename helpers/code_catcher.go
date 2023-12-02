@@ -22,6 +22,7 @@ type CodeCatcher struct {
 	emptyOnly          bool
 }
 
+// NewCodeCatcher creates a new CodeCatcher.
 func NewCodeCatcher(rw http.ResponseWriter, httpCodeRanges HTTPCodeRanges, emptyOnly bool) *CodeCatcher {
 	return &CodeCatcher{
 		headerMap:      make(http.Header),
@@ -32,6 +33,7 @@ func NewCodeCatcher(rw http.ResponseWriter, httpCodeRanges HTTPCodeRanges, empty
 	}
 }
 
+// Header gets the captured headers.
 func (cc *CodeCatcher) Header() http.Header {
 	if cc.headersSent {
 		return cc.responseWriter.Header()
@@ -44,20 +46,23 @@ func (cc *CodeCatcher) Header() http.Header {
 	return cc.headerMap
 }
 
+// GetCode gets the captured status code.
 func (cc *CodeCatcher) GetCode() int {
 	return cc.code
 }
 
-// isFilteredCode returns whether the codeCatcher received a response code among the ones it is watching,
+// IsFilteredCode returns whether the codeCatcher received a response code among the ones it is watching,
 // and for which the response should be deferred to the error handler.
 func (cc *CodeCatcher) IsFilteredCode() bool {
 	return cc.caughtFilteredCode
 }
 
+// HasBody tells if the response has a body.
 func (cc *CodeCatcher) HasBody() bool {
 	return cc.emptyOnly && cc.caughtFilteredBody
 }
 
+// Write writes the response or ignores it.
 func (cc *CodeCatcher) Write(buf []byte) (int, error) {
 	// If WriteHeader was already called from the caller, this is a NOOP.
 	// Otherwise, cc.code is actually a 200 here.

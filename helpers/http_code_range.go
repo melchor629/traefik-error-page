@@ -5,10 +5,12 @@ import (
 	"strings"
 )
 
+// HTTPCodeRanges is a list of HTTP Status Code ranges.
 type HTTPCodeRanges [][2]int
 
+// NewHTTPCodeRanges creates a new HTTPCodeRanges.
 func NewHTTPCodeRanges(strBlocks []string) (HTTPCodeRanges, error) {
-	var blocks HTTPCodeRanges
+	blocks := make(HTTPCodeRanges, 0, len(strBlocks))
 	for _, block := range strBlocks {
 		codes := strings.Split(block, "-")
 		if len(codes) == 1 {
@@ -27,6 +29,7 @@ func NewHTTPCodeRanges(strBlocks []string) (HTTPCodeRanges, error) {
 	return blocks, nil
 }
 
+// Contains tells if the given status code is inside the ranges.
 func (h HTTPCodeRanges) Contains(statusCode int) bool {
 	for _, block := range h {
 		if statusCode >= block[0] && statusCode <= block[1] {

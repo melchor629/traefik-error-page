@@ -20,7 +20,7 @@ type CodeModifier struct {
 	responseWriter http.ResponseWriter
 }
 
-// newCodeModifier returns a codeModifier that enforces the given code.
+// NewCodeModifier returns a codeModifier that enforces the given code.
 func NewCodeModifier(rw http.ResponseWriter, code int) *CodeModifier {
 	return &CodeModifier{
 		headerMap:      make(http.Header),

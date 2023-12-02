@@ -23,8 +23,12 @@ linters-settings:
   godox:
     keywords:
       - FIXME
-  gofumpt:
-    extra-rules: true
+  depguard:
+    rules:
+      main:
+        allow:
+          - $gostd
+          - github.com/melchor629/traefik-error-page
 
 linters:
   enable-all: true
@@ -66,7 +70,8 @@ issues:
   exclude-use-default: false
   max-per-linter: 0
   max-same-issues: 0
-  exclude: []
+  exclude:
+    - "Error return value of .((os\\.)?std(out|err)\\..*|.*Close|.*Flush|os\\.Remove(All)?|.*printf?|os\\.(Un)?Setenv). is not checked"
   exclude-rules:
     - path: (.+)_test.go
       linters:

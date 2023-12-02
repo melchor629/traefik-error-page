@@ -1,4 +1,4 @@
-package traefik_error_page_test
+package traefikerrorpage_test
 
 import (
 	"context"
@@ -16,7 +16,7 @@ func TestFailsIfEmptyStatus(t *testing.T) {
 
 	ctx := context.Background()
 	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.WriteHeader(404)
+		rw.WriteHeader(http.StatusNotFound)
 	})
 
 	_, err := plugin.New(ctx, next, cfg, "demo-plugin")
@@ -36,7 +36,7 @@ func TestFailsIfEmptyService(t *testing.T) {
 
 	ctx := context.Background()
 	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.WriteHeader(404)
+		rw.WriteHeader(http.StatusNotFound)
 	})
 
 	_, err := plugin.New(ctx, next, cfg, "demo-plugin")
@@ -57,7 +57,7 @@ func TestFailsIfInvalidStatus(t *testing.T) {
 
 	ctx := context.Background()
 	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.WriteHeader(404)
+		rw.WriteHeader(http.StatusNotFound)
 	})
 
 	_, err := plugin.New(ctx, next, cfg, "demo-plugin")
@@ -78,7 +78,7 @@ func TestErrorWithEmptyResponse(t *testing.T) {
 
 	ctx := context.Background()
 	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.WriteHeader(404)
+		rw.WriteHeader(http.StatusNotFound)
 	})
 
 	handler, err := plugin.New(ctx, next, cfg, "demo-plugin")
@@ -95,7 +95,7 @@ func TestErrorWithEmptyResponse(t *testing.T) {
 
 	handler.ServeHTTP(recorder, req)
 
-	if recorder.Code != 404 {
+	if recorder.Code != http.StatusNotFound {
 		t.Errorf("status code is not 404: %d", recorder.Code)
 	}
 
@@ -129,7 +129,7 @@ func TestErrorWithResponse(t *testing.T) {
 
 	handler.ServeHTTP(recorder, req)
 
-	if recorder.Code != 404 {
+	if recorder.Code != http.StatusNotFound {
 		t.Errorf("status code is not 404: %d", recorder.Code)
 	}
 
@@ -164,7 +164,7 @@ func TestErrorWithResponseButForceHandle(t *testing.T) {
 
 	handler.ServeHTTP(recorder, req)
 
-	if recorder.Code != 404 {
+	if recorder.Code != http.StatusNotFound {
 		t.Errorf("status code is not 404: %d", recorder.Code)
 	}
 
@@ -188,8 +188,8 @@ func assertHasServed(t *testing.T, recorder *httptest.ResponseRecorder, served b
 func assertHeader(t *testing.T, recorder *httptest.ResponseRecorder, key, value string) {
 	t.Helper()
 
-	current_value := recorder.Header().Get(key)
-	if current_value != value {
-		t.Errorf("the header %s does not match expected value %s: %s", key, value, current_value)
+	currentValue := recorder.Header().Get(key)
+	if currentValue != value {
+		t.Errorf("the header %s does not match expected value %s: %s", key, value, currentValue)
 	}
 }
