@@ -9,6 +9,67 @@ import (
 	plugin "github.com/melchor629/traefik-error-page"
 )
 
+func TestFailsIfEmptyStatus(t *testing.T) {
+	cfg := plugin.CreateConfig()
+	cfg.Service = "https://http.cat"
+	cfg.Query = "/{status}"
+
+	ctx := context.Background()
+	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.WriteHeader(404)
+	})
+
+	_, err := plugin.New(ctx, next, cfg, "demo-plugin")
+	if err == nil {
+		t.Errorf("expected plugin constructor to fail")
+	}
+
+	if err.Error() != "status cannot be empty" {
+		t.Errorf("expected error is incorrect: %s", err.Error())
+	}
+}
+
+func TestFailsIfEmptyService(t *testing.T) {
+	cfg := plugin.CreateConfig()
+	cfg.Status = []string{"400-499", "500-599"}
+	cfg.Query = "/{status}"
+
+	ctx := context.Background()
+	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.WriteHeader(404)
+	})
+
+	_, err := plugin.New(ctx, next, cfg, "demo-plugin")
+	if err == nil {
+		t.Errorf("expected plugin constructor to fail")
+	}
+
+	if err.Error() != "service cannot be empty" {
+		t.Errorf("expected error is incorrect: %s", err.Error())
+	}
+}
+
+func TestFailsIfInvalidStatus(t *testing.T) {
+	cfg := plugin.CreateConfig()
+	cfg.Status = []string{"e"}
+	cfg.Service = "https://http.cat"
+	cfg.Query = "/{status}"
+
+	ctx := context.Background()
+	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.WriteHeader(404)
+	})
+
+	_, err := plugin.New(ctx, next, cfg, "demo-plugin")
+	if err == nil {
+		t.Errorf("expected plugin constructor to fail")
+	}
+
+	if err.Error() != "strconv.Atoi: parsing \"e\": invalid syntax" {
+		t.Errorf("expected error is incorrect: %s", err.Error())
+	}
+}
+
 func TestErrorWithEmptyResponse(t *testing.T) {
 	cfg := plugin.CreateConfig()
 	cfg.Status = []string{"400-499", "500-599"}
@@ -39,6 +100,8 @@ func TestErrorWithEmptyResponse(t *testing.T) {
 	}
 
 	assertHasServed(t, recorder, true)
+	assertHeader(t, recorder, "Content-Type", "")
+	assertHeader(t, recorder, "X-Content-Type-Options", "")
 }
 
 func TestErrorWithResponse(t *testing.T) {
@@ -71,6 +134,8 @@ func TestErrorWithResponse(t *testing.T) {
 	}
 
 	assertHasServed(t, recorder, false)
+	assertHeader(t, recorder, "Content-Type", "text/plain; charset=utf-8")
+	assertHeader(t, recorder, "X-Content-Type-Options", "nosniff")
 }
 
 func TestErrorWithResponseButForceHandle(t *testing.T) {
@@ -104,6 +169,8 @@ func TestErrorWithResponseButForceHandle(t *testing.T) {
 	}
 
 	assertHasServed(t, recorder, true)
+	assertHeader(t, recorder, "Content-Type", "")
+	assertHeader(t, recorder, "X-Content-Type-Options", "")
 }
 
 func assertHasServed(t *testing.T, recorder *httptest.ResponseRecorder, served bool) {
@@ -115,5 +182,14 @@ func assertHasServed(t *testing.T, recorder *httptest.ResponseRecorder, served b
 	}
 	if !served && value != "" {
 		t.Errorf("the response has been served from the error service and should not")
+	}
+}
+
+func assertHeader(t *testing.T, recorder *httptest.ResponseRecorder, key, value string) {
+	t.Helper()
+
+	current_value := recorder.Header().Get(key)
+	if current_value != value {
+		t.Errorf("the header %s does not match expected value %s: %s", key, value, current_value)
 	}
 }

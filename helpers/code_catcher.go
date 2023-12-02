@@ -72,7 +72,13 @@ func (cc *CodeCatcher) Write(buf []byte) (int, error) {
 
 	// write the value because was ignored in the WriteHeader below
 	if !cc.caughtFilteredBody {
+		// The copy is not appending the values,
+		// to not repeat them in case any informational status code has been written.
+		for k, v := range cc.Header() {
+			cc.responseWriter.Header()[k] = v
+		}
 		cc.responseWriter.WriteHeader(cc.code)
+		cc.headersSent = true
 	}
 
 	cc.caughtFilteredBody = true
@@ -108,13 +114,8 @@ func (cc *CodeCatcher) WriteHeader(code int) {
 		}
 	}
 
-	// The copy is not appending the values,
-	// to not repeat them in case any informational status code has been written.
-	for k, v := range cc.Header() {
-		cc.responseWriter.Header()[k] = v
-	}
-	cc.responseWriter.WriteHeader(cc.code)
-	cc.headersSent = true
+	// the copy of headers is done in the Write. the reason is to be able to
+	// handle better when it should and should not allow the original response
 }
 
 // Hijack hijacks the connection.
