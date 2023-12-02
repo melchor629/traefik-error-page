@@ -2,6 +2,7 @@ package traefikerrorpage_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -95,10 +96,7 @@ func TestErrorWithEmptyResponse(t *testing.T) {
 
 	handler.ServeHTTP(recorder, req)
 
-	if recorder.Code != http.StatusNotFound {
-		t.Errorf("status code is not 404: %d", recorder.Code)
-	}
-
+	assertStatusCode(t, recorder, http.StatusNotFound)
 	assertHasServed(t, recorder, true)
 	assertHeader(t, recorder, "Content-Type", "")
 	assertHeader(t, recorder, "X-Content-Type-Options", "")
@@ -129,13 +127,72 @@ func TestErrorWithResponse(t *testing.T) {
 
 	handler.ServeHTTP(recorder, req)
 
-	if recorder.Code != http.StatusNotFound {
-		t.Errorf("status code is not 404: %d", recorder.Code)
-	}
-
+	assertStatusCode(t, recorder, http.StatusNotFound)
 	assertHasServed(t, recorder, false)
 	assertHeader(t, recorder, "Content-Type", "text/plain; charset=utf-8")
 	assertHeader(t, recorder, "X-Content-Type-Options", "nosniff")
+}
+
+func TestNotErrorWithResponse(t *testing.T) {
+	cfg := plugin.CreateConfig()
+	cfg.Status = []string{"400-499", "500-599"}
+	cfg.Service = "https://http.cat"
+	cfg.Query = "/{status}"
+
+	ctx := context.Background()
+	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		rw.WriteHeader(http.StatusCreated)
+		fmt.Fprintln(rw, "Something has been created")
+	})
+
+	handler, err := plugin.New(ctx, next, cfg, "demo-plugin")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	recorder := httptest.NewRecorder()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	handler.ServeHTTP(recorder, req)
+
+	assertStatusCode(t, recorder, http.StatusCreated)
+	assertHasServed(t, recorder, false)
+	assertHeader(t, recorder, "Content-Type", "text/plain; charset=utf-8")
+}
+
+func TestNotErrorWithoutResponse(t *testing.T) {
+	cfg := plugin.CreateConfig()
+	cfg.Status = []string{"400-499", "500-599"}
+	cfg.Service = "https://http.cat"
+	cfg.Query = "/{status}"
+
+	ctx := context.Background()
+	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.WriteHeader(http.StatusNotModified)
+	})
+
+	handler, err := plugin.New(ctx, next, cfg, "demo-plugin")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	recorder := httptest.NewRecorder()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	handler.ServeHTTP(recorder, req)
+
+	assertStatusCode(t, recorder, http.StatusNotModified)
+	assertHasServed(t, recorder, false)
+	assertHeader(t, recorder, "Content-Type", "")
 }
 
 func TestErrorWithResponseButForceHandle(t *testing.T) {
@@ -164,10 +221,7 @@ func TestErrorWithResponseButForceHandle(t *testing.T) {
 
 	handler.ServeHTTP(recorder, req)
 
-	if recorder.Code != http.StatusNotFound {
-		t.Errorf("status code is not 404: %d", recorder.Code)
-	}
-
+	assertStatusCode(t, recorder, http.StatusNotFound)
 	assertHasServed(t, recorder, true)
 	assertHeader(t, recorder, "Content-Type", "")
 	assertHeader(t, recorder, "X-Content-Type-Options", "")
@@ -191,5 +245,14 @@ func assertHeader(t *testing.T, recorder *httptest.ResponseRecorder, key, value 
 	currentValue := recorder.Header().Get(key)
 	if currentValue != value {
 		t.Errorf("the header %s does not match expected value %s: %s", key, value, currentValue)
+	}
+}
+
+func assertStatusCode(t *testing.T, recorder *httptest.ResponseRecorder, expected int) {
+	t.Helper()
+
+	currentValue := recorder.Code
+	if currentValue != expected {
+		t.Errorf("status code is not %d: %d", expected, currentValue)
 	}
 }

@@ -84,6 +84,7 @@ func (ep *ErrorPage) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	// check the recorder code against the configured http status code ranges
 	code := catcher.GetCode()
+	catcher.Flush()
 	query := ep.parseQuery(code, req.URL.String())
 	ep.log(fmt.Sprintf("code is %d and query generated is %s", code, query))
 
