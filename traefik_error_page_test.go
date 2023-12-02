@@ -1,4 +1,4 @@
-package traefikerrorpage_test
+package traefik_error_page_test
 
 import (
 	"context"

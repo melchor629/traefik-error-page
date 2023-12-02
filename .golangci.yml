@@ -23,6 +23,8 @@ linters-settings:
   godox:
     keywords:
       - FIXME
+  stylecheck:
+    checks: ["all", "-ST1003"]
   depguard:
     rules:
       main:

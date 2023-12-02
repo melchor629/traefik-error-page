@@ -1,5 +1,9 @@
-// Package traefikerrorpage is the plugin package.
-package traefikerrorpage
+// revive:disable:var-naming
+
+// Package traefik_error_page is the plugin package.
+package traefik_error_page
+
+// revive:enable:var-naming
 
 import (
 	"context"
