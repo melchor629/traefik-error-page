@@ -7,6 +7,7 @@ package traefik_error_page
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -52,11 +53,11 @@ type ErrorPage struct {
 // New creates a new instance of the plugin.
 func New(_ context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
 	if len(config.Status) == 0 {
-		return nil, fmt.Errorf("status cannot be empty")
+		return nil, errors.New("status cannot be empty")
 	}
 
 	if len(config.Service) == 0 {
-		return nil, fmt.Errorf("service cannot be empty")
+		return nil, errors.New("service cannot be empty")
 	}
 
 	httpStatusRanges, err := helpers.NewHTTPCodeRanges(config.Status)
@@ -129,7 +130,7 @@ func newRequest(baseURL string) (*http.Request, error) {
 }
 
 func (ep *ErrorPage) handleInService(rw http.ResponseWriter, req *http.Request) {
-	rw.Header().Add("X-ErrorPage", "served")
+	rw.Header().Add("X-Errorpage", "served")
 	ep.log("making request to service")
 	res, err := http.DefaultClient.Do(req)
 	ep.log("request made to service")
@@ -137,7 +138,9 @@ func (ep *ErrorPage) handleInService(rw http.ResponseWriter, req *http.Request) 
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 	}
 
-	if _, err := io.Copy(rw, res.Body); err != nil {
+	_, err = io.Copy(rw, res.Body)
+	if err != nil {
+		ep.log(fmt.Sprintf("Could not read from service: %t", err))
 		// TODO handle error
 		return
 	}
@@ -147,7 +150,7 @@ func (ep *ErrorPage) handleInService(rw http.ResponseWriter, req *http.Request) 
 
 func (ep *ErrorPage) log(message string) {
 	if ep.debug {
-		// #nosec G104
+		//nolint:errcheck,gosec
 		os.Stdout.WriteString("plugin=traefik-error-page message=\"" + message + "\"\n")
 	}
 }

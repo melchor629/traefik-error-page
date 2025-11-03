@@ -82,9 +82,7 @@ func (cc *CodeCatcher) Write(buf []byte) (int, error) {
 		cc.log(fmt.Sprintf("Write called but no headers has been sent, code is %d", cc.code))
 		// The copy is not appending the values,
 		// to not repeat them in case any informational status code has been written.
-		for k, v := range cc.Header() {
-			cc.responseWriter.Header()[k] = v
-		}
+		CopyHeaders(cc.responseWriter.Header(), cc.Header())
 		cc.responseWriter.WriteHeader(cc.code)
 		cc.headersSent = true
 	}
@@ -105,10 +103,7 @@ func (cc *CodeCatcher) WriteHeader(code int) {
 		cc.log(fmt.Sprintf("WriteHeader called with code %d which is informational", code))
 		// Multiple informational status codes can be used,
 		// so here the copy is not appending the values to not repeat them.
-		for k, v := range cc.Header() {
-			cc.responseWriter.Header()[k] = v
-		}
-
+		CopyHeaders(cc.responseWriter.Header(), cc.Header())
 		cc.responseWriter.WriteHeader(code)
 		return
 	}
@@ -127,9 +122,7 @@ func (cc *CodeCatcher) WriteHeader(code int) {
 	cc.log(fmt.Sprintf("WriteHeader called with code %d", code))
 	// The copy is not appending the values,
 	// to not repeat them in case any informational status code has been written.
-	for k, v := range cc.Header() {
-		cc.responseWriter.Header()[k] = v
-	}
+	CopyHeaders(cc.responseWriter.Header(), cc.Header())
 	cc.responseWriter.WriteHeader(cc.code)
 	cc.headersSent = true
 }

@@ -62,17 +62,12 @@ func (r *CodeModifier) WriteHeader(code int) {
 	if code >= 100 && code <= 199 {
 		// Multiple informational status codes can be used,
 		// so here the copy is not appending the values to not repeat them.
-		for k, v := range r.headerMap {
-			r.responseWriter.Header()[k] = v
-		}
-
+		CopyHeaders(r.responseWriter.Header(), r.headerMap)
 		r.responseWriter.WriteHeader(code)
 		return
 	}
 
-	for k, v := range r.headerMap {
-		r.responseWriter.Header()[k] = v
-	}
+	CopyHeaders(r.responseWriter.Header(), r.headerMap)
 	r.responseWriter.WriteHeader(r.code)
 	r.headerSent = true
 }

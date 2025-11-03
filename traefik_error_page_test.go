@@ -16,7 +16,7 @@ func TestFailsIfEmptyStatus(t *testing.T) {
 	cfg.Query = "/{status}"
 
 	ctx := context.Background()
-	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+	next := http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		rw.WriteHeader(http.StatusNotFound)
 	})
 
@@ -36,7 +36,7 @@ func TestFailsIfEmptyService(t *testing.T) {
 	cfg.Query = "/{status}"
 
 	ctx := context.Background()
-	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+	next := http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		rw.WriteHeader(http.StatusNotFound)
 	})
 
@@ -57,7 +57,7 @@ func TestFailsIfInvalidStatus(t *testing.T) {
 	cfg.Query = "/{status}"
 
 	ctx := context.Background()
-	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+	next := http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		rw.WriteHeader(http.StatusNotFound)
 	})
 
@@ -78,7 +78,7 @@ func TestErrorWithEmptyResponse(t *testing.T) {
 	cfg.Query = "/{status}"
 
 	ctx := context.Background()
-	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+	next := http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		rw.WriteHeader(http.StatusNotFound)
 	})
 
@@ -140,10 +140,13 @@ func TestNotErrorWithResponse(t *testing.T) {
 	cfg.Query = "/{status}"
 
 	ctx := context.Background()
-	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+	next := http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		rw.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		rw.WriteHeader(http.StatusCreated)
-		fmt.Fprintln(rw, "Something has been created")
+		_, err := fmt.Fprintln(rw, "Something has been created")
+		if err != nil {
+			return
+		}
 	})
 
 	handler, err := plugin.New(ctx, next, cfg, "demo-plugin")
@@ -172,7 +175,7 @@ func TestNotErrorWithoutResponse(t *testing.T) {
 	cfg.Query = "/{status}"
 
 	ctx := context.Background()
-	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+	next := http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		rw.WriteHeader(http.StatusNotModified)
 	})
 
