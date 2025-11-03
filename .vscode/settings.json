@@ -1,0 +1,7 @@
+{
+    "go.coverOnSingleTestFile": true,
+    "go.coverOnSingleTest": true,
+    "go.coverageDecorator": {
+        "type": "gutter"
+    }
+}

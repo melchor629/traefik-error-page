@@ -78,9 +78,9 @@ func New(_ context.Context, next http.Handler, config *Config, name string) (htt
 func (ep *ErrorPage) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ep.log(fmt.Sprintf("config %#v", ep))
 	ep.log("request incoming")
-	catcher := helpers.NewCodeCatcher(rw, ep.httpStatusRanges, ep.emptyOnly)
+	catcher := helpers.NewCodeCatcher(rw, ep.httpStatusRanges, ep.emptyOnly, ep.log)
 	ep.next.ServeHTTP(catcher, req)
-	ep.log(fmt.Sprintf("request served, response has filtered code %t and body %t", catcher.IsFilteredCode(), catcher.HasBody()))
+	ep.log(fmt.Sprintf("request served, response has code %d filtered code %t and body %t", catcher.GetCode(), catcher.IsFilteredCode(), catcher.HasBody()))
 	if !catcher.IsFilteredCode() || catcher.HasBody() {
 		ep.log("request is OK, should not be handled")
 		return

@@ -1,3 +1,3 @@
 module github.com/melchor629/traefik-error-page
 
-go 1.19
+go 1.24

@@ -20,16 +20,18 @@ type CodeCatcher struct {
 	responseWriter     http.ResponseWriter
 	headersSent        bool
 	emptyOnly          bool
+	log                func(message string)
 }
 
 // NewCodeCatcher creates a new CodeCatcher.
-func NewCodeCatcher(rw http.ResponseWriter, httpCodeRanges HTTPCodeRanges, emptyOnly bool) *CodeCatcher {
+func NewCodeCatcher(rw http.ResponseWriter, httpCodeRanges HTTPCodeRanges, emptyOnly bool, log func(message string)) *CodeCatcher {
 	return &CodeCatcher{
 		headerMap:      make(http.Header),
 		code:           http.StatusOK, // If backend does not call WriteHeader on us, we consider it's a 200.
 		responseWriter: rw,
 		httpCodeRanges: httpCodeRanges,
 		emptyOnly:      emptyOnly,
+		log:            log,
 	}
 }
 
@@ -77,6 +79,7 @@ func (cc *CodeCatcher) Write(buf []byte) (int, error) {
 
 	// write the value because was ignored in the WriteHeader below
 	if !cc.caughtFilteredBody && !cc.headersSent {
+		cc.log(fmt.Sprintf("Write called but no headers has been sent, code is %d", cc.code))
 		// The copy is not appending the values,
 		// to not repeat them in case any informational status code has been written.
 		for k, v := range cc.Header() {
@@ -99,6 +102,7 @@ func (cc *CodeCatcher) WriteHeader(code int) {
 
 	// Handling informational headers.
 	if code >= 100 && code <= 199 {
+		cc.log(fmt.Sprintf("WriteHeader called with code %d which is informational", code))
 		// Multiple informational status codes can be used,
 		// so here the copy is not appending the values to not repeat them.
 		for k, v := range cc.Header() {
@@ -112,6 +116,7 @@ func (cc *CodeCatcher) WriteHeader(code int) {
 	cc.code = code
 	for _, block := range cc.httpCodeRanges {
 		if cc.code >= block[0] && cc.code <= block[1] {
+			cc.log(fmt.Sprintf("WriteHeader called with code %d which is on the expected range", code))
 			cc.caughtFilteredCode = true
 			// it will be up to the caller to send the headers,
 			// so it is out of our hands now.
@@ -119,6 +124,7 @@ func (cc *CodeCatcher) WriteHeader(code int) {
 		}
 	}
 
+	cc.log(fmt.Sprintf("WriteHeader called with code %d", code))
 	// The copy is not appending the values,
 	// to not repeat them in case any informational status code has been written.
 	for k, v := range cc.Header() {
