@@ -77,7 +77,7 @@ func New(_ context.Context, next http.Handler, config *Config, name string) (htt
 }
 
 func (ep *ErrorPage) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	ep.log(fmt.Sprintf("config %#v", ep))
+	ep.log(fmt.Sprintf("config httpStatusRanges=%#v service=%#v query=%#v emptyOnly=%#v debug=%#v name=%#v", ep.httpStatusRanges, ep.service, ep.query, ep.emptyOnly, ep.debug, ep.name))
 	ep.log("request incoming")
 	catcher := helpers.NewCodeCatcher(rw, ep.httpStatusRanges, ep.emptyOnly, ep.log)
 	ep.next.ServeHTTP(catcher, req)
