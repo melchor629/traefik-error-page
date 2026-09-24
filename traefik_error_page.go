@@ -135,7 +135,9 @@ func (ep *ErrorPage) handleInService(rw http.ResponseWriter, req *http.Request) 
 	res, err := http.DefaultClient.Do(req)
 	ep.log("request made to service")
 	if err != nil {
+		ep.log(fmt.Sprintf("could not contact service, review config pls %s", err))
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	_, err = io.Copy(rw, res.Body)
